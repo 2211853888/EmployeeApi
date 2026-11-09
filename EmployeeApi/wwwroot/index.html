@@ -1,0 +1,253 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>منظومة إدارة وتقييم الموظفين</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            padding: 25px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        h2, h3 {
+            color: #1e3a8a;
+            margin-top: 0;
+        }
+
+        /* تصميم حقول الإدخال */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        input, select {
+            padding: 9px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .btn-add {
+            background-color: #047857;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .btn-add:hover {
+                background-color: #065f46;
+            }
+
+        /* الجدول */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        th {
+            color: #1e3a8a;
+            padding: 12px;
+            border-bottom: 2px solid #edf2f7;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #edf2f7;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .badge-civil {
+            background-color: #047857;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .badge-status {
+            background-color: #4b5563;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .badge-evaluated {
+            background-color: #2563eb;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .btn-eval {
+            background-color: #1e3a8a;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+
+            .btn-eval:hover {
+                background-color: #172554;
+            }
+
+        .btn-del {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+            .btn-del:hover {
+                background-color: #b91c1c;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- نموذج إضافة موظف -->
+        <div class="card">
+            <h3>إضافة موظف جديد</h3>
+            <div class="form-grid">
+                <input type="text" id="jobNumber" placeholder="الرقم الوظيفي (مثلاً 101)" required>
+                <input type="text" id="fullName" placeholder="اسم الموظف الثلاثي" required>
+                <select id="employeeType">
+                    <option value="مدني">مدني</option>
+                    <option value="عسكري">عسكري</option>
+                </select>
+                <input type="text" id="position" placeholder="الوظيفة (مثلاً مهندس)">
+                <input type="text" id="department" placeholder="القسم (مثلاً تقنية المعلومات)">
+            </div>
+            <button class="btn-add" onclick="createEmployee()">+ إضافة الموظف للنظام</button>
+        </div>
+
+        <!-- جدول الموظفين -->
+        <div class="card">
+            <h2>قائمة الموظفين</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الرقم الوظيفي</th>
+                        <th>نوع الموظف</th>
+                        <th>اسم الموظف</th>
+                        <th>الوظيفة</th>
+                        <th>القسم</th>
+                        <th>حالة التقييم</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="employeesTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 1. جلب وعرض البيانات
+        async function loadEmployees() {
+            const response = await fetch('/employees');
+            const data = await response.json();
+            const tbody = document.getElementById('employeesTable');
+            tbody.innerHTML = '';
+
+            data.forEach(emp => {
+                const statusClass = emp.evaluationStatus === 'تم التقييم' ? 'badge-evaluated' : 'badge-status';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${emp.jobNumber}</td>
+                        <td><span class="badge-civil">${emp.employeeType}</span></td>
+                        <td><b>${emp.fullName}</b></td>
+                        <td>${emp.position}</td>
+                        <td>${emp.department}</td>
+                        <td><span class="${statusClass}">${emp.evaluationStatus}</span></td>
+                        <td>
+                            <button class="btn-eval" onclick="evaluateEmp(${emp.id})">تقييم</button>
+                            <button class="btn-del" onclick="deleteEmp(${emp.id})">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 2. إضافة موظف
+        async function createEmployee() {
+            const jobNum = document.getElementById('jobNumber').value.trim();
+            const name = document.getElementById('fullName').value.trim();
+            if (!jobNum || !name) {
+                alert('يرجى كتابة الرقم الوظيفي والاسم على الأقل');
+                return;
+            }
+
+            const newEmp = {
+                jobNumber: jobNum,
+                fullName: name,
+                employeeType: document.getElementById('employeeType').value,
+                position: document.getElementById('position').value,
+                department: document.getElementById('department').value,
+                evaluationStatus: "لم يتم تقييمه"
+            };
+
+            await fetch('/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newEmp)
+            });
+
+            // تنظيف الحقول وإعادة تحميل الجدول
+            document.getElementById('jobNumber').value = '';
+            document.getElementById('fullName').value = '';
+            document.getElementById('position').value = '';
+            document.getElementById('department').value = '';
+            loadEmployees();
+        }
+
+        // 3. تقييم موظف
+        async function evaluateEmp(id) {
+            await fetch(`/employees/evaluate/${id}`, { method: 'PUT' });
+            loadEmployees();
+        }
+
+        // 4. حذف موظف
+        async function deleteEmp(id) {
+            if (confirm('هل أنتِ متأكدة من حذف هذا الموظف؟')) {
+                await fetch(`/employees/${id}`, { method: 'DELETE' });
+                loadEmployees();
+            }
+        }
+
+        loadEmployees();
+    </script>
+
+</body>
+</html>
